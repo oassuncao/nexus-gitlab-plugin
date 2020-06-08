@@ -7,16 +7,22 @@ import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.authz.SimpleAuthorizationInfo;
 import org.apache.shiro.realm.AuthorizingRealm;
 import org.apache.shiro.subject.PrincipalCollection;
+import org.eclipse.sisu.Description;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
 import java.time.Duration;
 
 /**
  * @author Silvio Assunção
  * @since 1.0
  */
+@Singleton
+@Named
+@Description("Gitlab Authentication Realm")
 public class GitlabAuthenticatingRealm extends AuthorizingRealm {
 // ------------------------------ FIELDS ------------------------------
 
