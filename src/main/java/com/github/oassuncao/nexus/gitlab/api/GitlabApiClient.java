@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
@@ -65,34 +64,35 @@ public class GitlabApiClient {
 
     private GitlabPrincipal getPrincipal(String loginName, char[] token) throws GitlabAuthenticationException {
         GitlabUser gitlabUser;
+        GitlabAPI gitlabAPI;
         try {
-            GitlabAPI gitlabAPI = GitlabAPI.connect(url, String.valueOf(token));
+            gitlabAPI = GitlabAPI.connect(url, String.valueOf(token));
             gitlabUser = gitlabAPI.getUser();
         } catch (Exception e) {
-            LOGGER.warn("GitlabAPI.connect ex:", e);
+            LOGGER.warn(String.format("Error on connect %s", loginName), e);
             throw new GitlabAuthenticationException(e);
         }
 
         if (gitlabUser == null || !loginName.equals(gitlabUser.getEmail())) {
-            LOGGER.warn("Given username not found or does not match Github Username!");
-            throw new GitlabAuthenticationException("Given username not found or does not match Github Username!");
+            LOGGER.warn("Given username {} not found or does not match Gitlab E-mail!", loginName);
+            throw new GitlabAuthenticationException("Given username not found or does not match Gitlab E-mail!");
         }
 
         GitlabPrincipal principal = new GitlabPrincipal();
         principal.setName(gitlabUser.getName());
         principal.setUsername(gitlabUser.getEmail());
-        principal.setGroups(getGroups((gitlabUser.getUsername())));
+        principal.setGroups(getGroups(gitlabUser.getUsername()));
         return principal;
     }
 
     private Set<String> getGroups(String username) throws GitlabAuthenticationException {
-        List<GitlabGroup> groups;
         try {
-            groups = client.getGroupsViaSudo(username, new Pagination().withPerPage(Pagination.MAX_ITEMS_PER_PAGE));
-        } catch (IOException e) {
+            List<GitlabGroup> groups = client.getGroupsViaSudo(username, new Pagination().withPerPage(Pagination.MAX_ITEMS_PER_PAGE));
+            return groups.stream().map(this::mapGitlabGroupToNexusRole).collect(Collectors.toSet());
+        } catch (Exception e) {
+            LOGGER.warn("Error on getting groups", e);
             throw new GitlabAuthenticationException("Could not fetch groups for given username");
         }
-        return groups.stream().map(this::mapGitlabGroupToNexusRole).collect(Collectors.toSet());
     }
 
     public void init(String url, String token, Duration cacheTtl) {

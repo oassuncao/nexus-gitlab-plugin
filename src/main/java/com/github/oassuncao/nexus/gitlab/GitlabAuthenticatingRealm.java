@@ -15,6 +15,8 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.time.Duration;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author Silvio Assunção
@@ -33,36 +35,49 @@ public class GitlabAuthenticatingRealm extends AuthorizingRealm {
     private String url = "https://gitlab.com";
     private String token;
     private Duration cacheTtl = Duration.parse("PT1M");//1 Minute
+    private String defaultRole;
+    private String groupAdmin;
+    private String roleAdmin;
+    private String groupPusher;
+    private String rolePusher;
 
 // --------------------- GETTER / SETTER METHODS ---------------------
-
-    public Duration getCacheTtl() {
-        return cacheTtl;
-    }
 
     public void setCacheTtl(Duration cacheTtl) {
         this.cacheTtl = cacheTtl;
     }
 
-    public String getToken() {
-        return token;
+    public void setDefaultRole(String defaultRole) {
+        this.defaultRole = defaultRole;
+    }
+
+    @Inject
+    public void setGitlabClient(GitlabApiClient gitlabClient) {
+        this.gitlabClient = gitlabClient;
+    }
+
+    public void setGroupAdmin(String groupAdmin) {
+        this.groupAdmin = groupAdmin;
+    }
+
+    public void setGroupPusher(String groupPusher) {
+        this.groupPusher = groupPusher;
+    }
+
+    public void setRoleAdmin(String roleAdmin) {
+        this.roleAdmin = roleAdmin;
+    }
+
+    public void setRolePusher(String rolePusher) {
+        this.rolePusher = rolePusher;
     }
 
     public void setToken(String token) {
         this.token = token;
     }
 
-    public String getUrl() {
-        return url;
-    }
-
     public void setUrl(String url) {
         this.url = url;
-    }
-
-    @Inject
-    public void setGitlabClient(GitlabApiClient gitlabClient) {
-        this.gitlabClient = gitlabClient;
     }
 
 // -------------------------- OTHER METHODS --------------------------
@@ -78,16 +93,17 @@ public class GitlabAuthenticatingRealm extends AuthorizingRealm {
                     token.getClass().getName(), UsernamePasswordToken.class.getName()));
         }
 
-        if (!enabled)
+        if (!enabled) {
+            LOGGER.info("The Realm is disabled");
             throw new UnsupportedOperationException("The Realm is disabled");
+        }
 
         UsernamePasswordToken t = (UsernamePasswordToken) token;
         LOGGER.info("Authenticating {}", ((UsernamePasswordToken) token).getUsername());
-
         GitlabPrincipal authenticatedPrincipal;
         try {
             authenticatedPrincipal = gitlabClient.authenticate(t.getUsername(), t.getPassword());
-            LOGGER.info("Successfully authenticated {}", t.getUsername());
+            LOGGER.info("Successfully authenticated {} with groups {}", t.getUsername(), authenticatedPrincipal.getGroups());
         } catch (Exception e) {
             LOGGER.warn("Failed authentication", e);
             return null;
@@ -109,7 +125,19 @@ public class GitlabAuthenticatingRealm extends AuthorizingRealm {
     @Override
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
         GitlabPrincipal principal = (GitlabPrincipal) principals.getPrimaryPrincipal();
-        return new SimpleAuthorizationInfo(principal.getGroups());
+        Set<String> roles = getRoles(principal);
+        LOGGER.info("User {} received authorizations {}", principal.getUsername(), roles);
+        return new SimpleAuthorizationInfo(roles);
+    }
+
+    private Set<String> getRoles(GitlabPrincipal principal) {
+        Set<String> roles = new HashSet<>();
+        roles.add(defaultRole);
+        if (principal.getGroups().stream().anyMatch(d -> groupAdmin.equals(d)))
+            roles.add(roleAdmin);
+        if (principal.getGroups().stream().anyMatch(d -> groupPusher.equals(d)))
+            roles.add(rolePusher);
+        return roles;
     }
 
     public void enable() {

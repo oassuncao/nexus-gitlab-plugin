@@ -2,6 +2,7 @@ package com.github.oassuncao.nexus.gitlab.config;
 
 import com.github.oassuncao.nexus.gitlab.GitlabAuthenticatingRealm;
 import org.sonatype.nexus.capability.CapabilitySupport;
+import org.sonatype.nexus.capability.Condition;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -33,10 +34,20 @@ public class GitlabCapability extends CapabilitySupport<GitlabCapabilityConfigur
     }
 
     @Override
+    public Condition activationCondition() {
+        return conditions().capabilities().passivateCapabilityDuringUpdate();
+    }
+
+    @Override
     protected void onActivate(GitlabCapabilityConfiguration config) throws Exception {
         authenticatingRealm.setCacheTtl(Duration.parse(config.getCacheTtl()));
         authenticatingRealm.setToken(config.getToken());
         authenticatingRealm.setUrl(config.getUrl());
+        authenticatingRealm.setDefaultRole(config.getDefaultRole());
+        authenticatingRealm.setGroupAdmin(config.getGroupAdmin());
+        authenticatingRealm.setRoleAdmin(config.getRoleAdmin());
+        authenticatingRealm.setGroupPusher(config.getGroupPusher());
+        authenticatingRealm.setRolePusher(config.getRolePusher());
 
         authenticatingRealm.enable();
         super.onActivate(config);

@@ -4,9 +4,7 @@ import org.sonatype.goodies.i18n.I18N;
 import org.sonatype.goodies.i18n.MessageBundle;
 import org.sonatype.nexus.capability.CapabilityDescriptorSupport;
 import org.sonatype.nexus.capability.CapabilityType;
-import org.sonatype.nexus.formfields.FormField;
-import org.sonatype.nexus.formfields.PasswordFormField;
-import org.sonatype.nexus.formfields.StringTextFormField;
+import org.sonatype.nexus.formfields.*;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -31,6 +29,11 @@ public class GitlabCapabilityDescriptor extends CapabilityDescriptorSupport<Gitl
     private final StringTextFormField url;
     private final PasswordFormField token;
     private final StringTextFormField cacheTtl;
+    private final ComboboxFormField<String> defaultRole;
+    private final StringTextFormField groupAdmin;
+    private final ComboboxFormField<String> roleAdmin;
+    private final StringTextFormField groupPusher;
+    private final ComboboxFormField<String> rolePusher;
 
 // --------------------------- CONSTRUCTORS ---------------------------
 
@@ -38,7 +41,7 @@ public class GitlabCapabilityDescriptor extends CapabilityDescriptorSupport<Gitl
         setExposed(true);
         setHidden(false);
 
-        this.url = new StringTextFormField(
+        this.url = new UrlFormField(
                 GitlabCapabilityConfiguration.URL,
                 messages.urlLabel(),
                 messages.urlHelp(),
@@ -58,6 +61,41 @@ public class GitlabCapabilityDescriptor extends CapabilityDescriptorSupport<Gitl
                 messages.cacheTtlHelp(),
                 FormField.MANDATORY
         );
+
+        this.defaultRole = new ComboboxFormField<String>(
+                GitlabCapabilityConfiguration.DEFAULT_ROLE,
+                messages.defaultRoleLabel(),
+                messages.defaultRoleHelp(),
+                FormField.MANDATORY
+        ).withStoreApi("coreui_Role.read");
+
+        this.groupAdmin = new StringTextFormField(
+                GitlabCapabilityConfiguration.GROUP_ADMIN,
+                messages.groupAdminLabel(),
+                messages.groupAdminHelp(),
+                FormField.MANDATORY
+        );
+
+        this.roleAdmin = new ComboboxFormField<String>(
+                GitlabCapabilityConfiguration.ROLE_ADMIN,
+                messages.roleAdminLabel(),
+                messages.roleAdminHelp(),
+                FormField.MANDATORY
+        ).withStoreApi("coreui_Role.read");
+
+        this.groupPusher = new StringTextFormField(
+                GitlabCapabilityConfiguration.GROUP_PUSHER,
+                messages.groupPusherLabel(),
+                messages.groupPusherHelp(),
+                FormField.MANDATORY
+        );
+
+        this.rolePusher = new ComboboxFormField<String>(
+                GitlabCapabilityConfiguration.ROLE_PUSHER,
+                messages.rolePusherLabel(),
+                messages.rolePusherHelp(),
+                FormField.MANDATORY
+        ).withStoreApi("coreui_Role.read");
     }
 
 // ------------------------ INTERFACE METHODS ------------------------
@@ -77,7 +115,7 @@ public class GitlabCapabilityDescriptor extends CapabilityDescriptorSupport<Gitl
 
     @Override
     public List<FormField> formFields() {
-        return Arrays.asList(this.url, this.token, this.cacheTtl);
+        return Arrays.asList(this.url, this.token, this.cacheTtl, this.defaultRole, this.groupPusher, this.rolePusher, this.groupAdmin, this.roleAdmin);
     }
 
     @Override
@@ -111,5 +149,35 @@ public class GitlabCapabilityDescriptor extends CapabilityDescriptorSupport<Gitl
 
         @DefaultMessage("Duration cache of the authentication (Ex: PT1M)")
         String cacheTtlHelp();
+
+        @DefaultMessage("Default Role")
+        String defaultRoleLabel();
+
+        @DefaultMessage("Default role used for any authentication user")
+        String defaultRoleHelp();
+
+        @DefaultMessage("Group Pusher")
+        String groupPusherLabel();
+
+        @DefaultMessage("Gitlab group pusher name")
+        String groupPusherHelp();
+
+        @DefaultMessage("Role Pusher")
+        String rolePusherLabel();
+
+        @DefaultMessage("Role to pusher group")
+        String rolePusherHelp();
+
+        @DefaultMessage("Group Admin")
+        String groupAdminLabel();
+
+        @DefaultMessage("Gitlab group admin name")
+        String groupAdminHelp();
+
+        @DefaultMessage("Role Admin")
+        String roleAdminLabel();
+
+        @DefaultMessage("Role to admin group")
+        String roleAdminHelp();
     }
 }
