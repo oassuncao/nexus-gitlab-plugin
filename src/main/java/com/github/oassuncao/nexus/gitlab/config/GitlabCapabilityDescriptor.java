@@ -34,6 +34,8 @@ public class GitlabCapabilityDescriptor extends CapabilityDescriptorSupport<Gitl
     private final ComboboxFormField<String> roleAdmin;
     private final StringTextFormField groupPusher;
     private final ComboboxFormField<String> rolePusher;
+    private final StringTextFormField headerName;
+    private final StringTextFormField headerUsername;
 
 // --------------------------- CONSTRUCTORS ---------------------------
 
@@ -96,6 +98,20 @@ public class GitlabCapabilityDescriptor extends CapabilityDescriptorSupport<Gitl
                 messages.rolePusherHelp(),
                 FormField.MANDATORY
         ).withStoreApi("coreui_Role.read");
+
+        this.headerUsername = new StringTextFormField(
+                GitlabCapabilityConfiguration.HEADER_USERNAME,
+                messages.headerUsernameLabel(),
+                messages.headerUsernameHelp(),
+                FormField.OPTIONAL
+        );
+
+        this.headerName = new StringTextFormField(
+                GitlabCapabilityConfiguration.HEADER_NAME,
+                messages.headerNameLabel(),
+                messages.headerNameHelp(),
+                FormField.OPTIONAL
+        );
     }
 
 // ------------------------ INTERFACE METHODS ------------------------
@@ -115,7 +131,9 @@ public class GitlabCapabilityDescriptor extends CapabilityDescriptorSupport<Gitl
 
     @Override
     public List<FormField> formFields() {
-        return Arrays.asList(this.url, this.token, this.cacheTtl, this.defaultRole, this.groupPusher, this.rolePusher, this.groupAdmin, this.roleAdmin);
+        return Arrays.asList(this.url, this.token, this.cacheTtl, this.defaultRole,
+                this.groupPusher, this.rolePusher, this.groupAdmin, this.roleAdmin,
+                this.headerUsername, this.headerName);
     }
 
     @Override
@@ -179,5 +197,17 @@ public class GitlabCapabilityDescriptor extends CapabilityDescriptorSupport<Gitl
 
         @DefaultMessage("Role to admin group")
         String roleAdminHelp();
+
+        @DefaultMessage("Header Username")
+        String headerUsernameLabel();
+
+        @DefaultMessage("HTTP Header to identify the username")
+        String headerUsernameHelp();
+
+        @DefaultMessage("Header Name")
+        String headerNameLabel();
+
+        @DefaultMessage("HTTP Header to identify the name")
+        String headerNameHelp();
     }
 }

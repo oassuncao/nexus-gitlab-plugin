@@ -19,6 +19,8 @@ public class GitlabCapabilityConfiguration extends CapabilityConfigurationSuppor
     static final String ROLE_ADMIN = "roleAdmin";
     static final String GROUP_PUSHER = "groupPusher";
     static final String ROLE_PUSHER = "rolePusher";
+    static final String HEADER_NAME = "headerName";
+    static final String HEADER_USERNAME = "headerUsername";
 
     private String url;
     private String token;
@@ -28,6 +30,8 @@ public class GitlabCapabilityConfiguration extends CapabilityConfigurationSuppor
     private String roleAdmin;
     private String groupPusher;
     private String rolePusher;
+    private String headerName;
+    private String headerUsername;
 
 // --------------------------- CONSTRUCTORS ---------------------------
 
@@ -40,6 +44,9 @@ public class GitlabCapabilityConfiguration extends CapabilityConfigurationSuppor
         roleAdmin = properties.get(ROLE_ADMIN);
         groupPusher = properties.get(GROUP_PUSHER);
         rolePusher = properties.get(ROLE_PUSHER);
+
+        headerName = properties.get(HEADER_NAME);
+        headerUsername = properties.get(HEADER_USERNAME);
     }
 
 // --------------------- GETTER / SETTER METHODS ---------------------
@@ -74,6 +81,14 @@ public class GitlabCapabilityConfiguration extends CapabilityConfigurationSuppor
 
     public void setGroupPusher(String groupPusher) {
         this.groupPusher = groupPusher;
+    }
+
+    public String getHeaderName() {
+        return headerName;
+    }
+
+    public String getHeaderUsername() {
+        return headerUsername;
     }
 
     public String getRoleAdmin() {

@@ -1,22 +1,16 @@
 package com.github.oassuncao.nexus.gitlab;
 
-import com.github.oassuncao.nexus.gitlab.api.GitlabApiClient;
-import org.apache.shiro.authc.*;
+import org.apache.shiro.authc.AuthenticationException;
+import org.apache.shiro.authc.AuthenticationInfo;
+import org.apache.shiro.authc.AuthenticationToken;
+import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.authc.pam.UnsupportedTokenException;
-import org.apache.shiro.authz.AuthorizationInfo;
-import org.apache.shiro.authz.SimpleAuthorizationInfo;
-import org.apache.shiro.realm.AuthorizingRealm;
-import org.apache.shiro.subject.PrincipalCollection;
 import org.eclipse.sisu.Description;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
-import java.time.Duration;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author Silvio Assunção
@@ -25,66 +19,26 @@ import java.util.Set;
 @Singleton
 @Named
 @Description("Gitlab Authentication Realm")
-public class GitlabAuthenticatingRealm extends AuthorizingRealm {
+public class GitlabAuthenticatingRealm extends AbstractGitlabAuthenticationRealm {
 // ------------------------------ FIELDS ------------------------------
 
-    private static final String NAME = GitlabAuthenticatingRealm.class.getName();
     private static final Logger LOGGER = LoggerFactory.getLogger(GitlabAuthenticatingRealm.class);
-    boolean enabled;
-    private GitlabApiClient gitlabClient;
-    private String url = "https://gitlab.com";
-    private String token;
-    private Duration cacheTtl = Duration.parse("PT1M");//1 Minute
-    private String defaultRole;
-    private String groupAdmin;
-    private String roleAdmin;
-    private String groupPusher;
-    private String rolePusher;
 
-// --------------------- GETTER / SETTER METHODS ---------------------
+// ------------------------ INTERFACE METHODS ------------------------
 
-    public void setCacheTtl(Duration cacheTtl) {
-        this.cacheTtl = cacheTtl;
+    public GitlabAuthenticatingRealm() {
+        setName("gitlab");
     }
 
-    public void setDefaultRole(String defaultRole) {
-        this.defaultRole = defaultRole;
-    }
 
-    @Inject
-    public void setGitlabClient(GitlabApiClient gitlabClient) {
-        this.gitlabClient = gitlabClient;
-    }
+// --------------------- Interface Realm ---------------------
 
-    public void setGroupAdmin(String groupAdmin) {
-        this.groupAdmin = groupAdmin;
-    }
-
-    public void setGroupPusher(String groupPusher) {
-        this.groupPusher = groupPusher;
-    }
-
-    public void setRoleAdmin(String roleAdmin) {
-        this.roleAdmin = roleAdmin;
-    }
-
-    public void setRolePusher(String rolePusher) {
-        this.rolePusher = rolePusher;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
+    @Override
+    public boolean supports(AuthenticationToken token) {
+        return token instanceof UsernamePasswordToken;
     }
 
 // -------------------------- OTHER METHODS --------------------------
-
-    public void disable() {
-        enabled = false;
-    }
 
     @Override
     protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token) throws AuthenticationException {
@@ -104,44 +58,10 @@ public class GitlabAuthenticatingRealm extends AuthorizingRealm {
         try {
             authenticatedPrincipal = gitlabClient.authenticate(t.getUsername(), t.getPassword());
             LOGGER.info("Successfully authenticated {} with groups {}", t.getUsername(), authenticatedPrincipal.getGroups());
+            return createSimpleAuthInfo(authenticatedPrincipal, t);
         } catch (Exception e) {
             LOGGER.warn("Failed authentication", e);
             return null;
         }
-
-        return createSimpleAuthInfo(authenticatedPrincipal, t);
-    }
-
-    /**
-     * Creates the simple auth info.
-     *
-     * @param token the token
-     * @return the simple authentication info
-     */
-    private SimpleAuthenticationInfo createSimpleAuthInfo(GitlabPrincipal principal, UsernamePasswordToken token) {
-        return new SimpleAuthenticationInfo(principal, token.getCredentials(), NAME);
-    }
-
-    @Override
-    protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
-        GitlabPrincipal principal = (GitlabPrincipal) principals.getPrimaryPrincipal();
-        Set<String> roles = getRoles(principal);
-        LOGGER.info("User {} received authorizations {}", principal.getUsername(), roles);
-        return new SimpleAuthorizationInfo(roles);
-    }
-
-    private Set<String> getRoles(GitlabPrincipal principal) {
-        Set<String> roles = new HashSet<>();
-        roles.add(defaultRole);
-        if (principal.getGroups().stream().anyMatch(d -> groupAdmin.equals(d)))
-            roles.add(roleAdmin);
-        if (principal.getGroups().stream().anyMatch(d -> groupPusher.equals(d)))
-            roles.add(rolePusher);
-        return roles;
-    }
-
-    public void enable() {
-        this.gitlabClient.init(url, token, cacheTtl);
-        enabled = true;
     }
 }
