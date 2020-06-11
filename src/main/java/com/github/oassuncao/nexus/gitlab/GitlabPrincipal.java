@@ -1,5 +1,7 @@
 package com.github.oassuncao.nexus.gitlab;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.Serializable;
 import java.util.Set;
 
@@ -11,10 +13,18 @@ public class GitlabPrincipal implements Serializable {
 // ------------------------------ FIELDS ------------------------------
 
     private String username;
-    private String name;
+    private String email;
     private Set<String> groups;
 
 // --------------------- GETTER / SETTER METHODS ---------------------
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
 
     public Set<String> getGroups() {
         return groups;
@@ -22,14 +32,6 @@ public class GitlabPrincipal implements Serializable {
 
     public void setGroups(Set<String> groups) {
         this.groups = groups;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getUsername() {
@@ -44,6 +46,8 @@ public class GitlabPrincipal implements Serializable {
 
     @Override
     public String toString() {
-        return username;
+        if (StringUtils.isNotEmpty(username))
+            return username;
+        return email;
     }
 }

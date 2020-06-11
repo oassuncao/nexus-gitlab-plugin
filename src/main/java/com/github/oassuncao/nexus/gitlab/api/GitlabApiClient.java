@@ -35,7 +35,6 @@ public class GitlabApiClient {
     private GitlabAPI client;
     private Cache<String, GitlabPrincipal> tokenToPrincipalCache;
     private String url;
-    private String token;
     private Duration cacheTtl;
 
 // --------------------------- CONSTRUCTORS ---------------------------
@@ -71,8 +70,7 @@ public class GitlabApiClient {
             gitlabAPI = GitlabAPI.connect(url, String.valueOf(token));
             gitlabUser = gitlabAPI.getUser();
         } catch (Exception e) {
-            LOGGER.warn(String.format("Error on connect %s", loginName), e);
-            throw new GitlabAuthenticationException(e);
+            throw new GitlabAuthenticationException("Error on validating user and token", e);
         }
 
         if (gitlabUser == null || !loginName.equals(gitlabUser.getEmail())) {
@@ -81,8 +79,8 @@ public class GitlabApiClient {
         }
 
         GitlabPrincipal principal = new GitlabPrincipal();
-        principal.setName(gitlabUser.getName());
-        principal.setUsername(gitlabUser.getEmail());
+        principal.setEmail(gitlabUser.getEmail());
+        principal.setUsername(gitlabUser.getUsername());
         principal.setGroups(getGroups(gitlabUser.getUsername()));
         return principal;
     }
@@ -91,8 +89,7 @@ public class GitlabApiClient {
         try {
             return client.findUsers(username);
         } catch (IOException e) {
-            LOGGER.warn("Error on finding user", e);
-            throw new GitlabAuthenticationException("Could not fetch users for given username");
+            throw new GitlabAuthenticationException("Could not fetch users for given username", e);
         }
     }
 
@@ -101,15 +98,13 @@ public class GitlabApiClient {
             List<GitlabGroup> groups = client.getGroupsViaSudo(username, new Pagination().withPerPage(Pagination.MAX_ITEMS_PER_PAGE));
             return groups.stream().map(this::mapGitlabGroupToNexusRole).collect(Collectors.toSet());
         } catch (Throwable e) {
-            LOGGER.warn("Error on getting groups", e);
-            throw new GitlabAuthenticationException("Could not fetch groups for given username");
+            throw new GitlabAuthenticationException("Could not fetch groups for given username", e);
         }
     }
 
     public void init(String url, String token, Duration cacheTtl) {
         this.url = url;
         this.cacheTtl = cacheTtl;
-        this.token = token;
 
         client = GitlabAPI.connect(url, token);
         initPrincipalCache();

@@ -11,7 +11,7 @@ public class GitlabAuthenticationException extends Exception {
         super(message);
     }
 
-    public GitlabAuthenticationException(Throwable cause) {
-        super(cause);
+    public GitlabAuthenticationException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

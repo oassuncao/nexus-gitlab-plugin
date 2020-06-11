@@ -3,7 +3,6 @@ package com.github.oassuncao.nexus.gitlab;
 import com.github.oassuncao.nexus.gitlab.api.GitlabApiClient;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.authc.SimpleAuthenticationInfo;
-import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.authz.SimpleAuthorizationInfo;
 import org.apache.shiro.realm.AuthorizingRealm;
@@ -94,10 +93,16 @@ public abstract class AbstractGitlabAuthenticationRealm extends AuthorizingRealm
     @Override
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
         try {
-            GitlabPrincipal principal = (GitlabPrincipal) principals.getPrimaryPrincipal();
-            Set<String> roles = getRoles(principal);
-            LOGGER.info("User {} received authorizations {}", principal.getUsername(), roles);
-            return new SimpleAuthorizationInfo(roles);
+            Object principal = principals.getPrimaryPrincipal();
+            if (principal instanceof GitlabPrincipal) {
+                GitlabPrincipal gitlabPrincipal = (GitlabPrincipal) principal;
+                Set<String> roles = getRoles(gitlabPrincipal);
+                LOGGER.debug("User {} received authorizations {}", gitlabPrincipal.getUsername(), roles);
+                return new SimpleAuthorizationInfo(roles);
+            } else {
+                LOGGER.warn("Principal is not a GitlabPrincipal {} with value {}", principal.getClass().getCanonicalName(), principal.toString());
+                return null;
+            }
         } catch (Throwable ex) {
             LOGGER.error("Error on doGetAuthorizationInfo", ex);
             throw ex;

@@ -34,7 +34,7 @@ public class GitlabCapabilityDescriptor extends CapabilityDescriptorSupport<Gitl
     private final ComboboxFormField<String> roleAdmin;
     private final StringTextFormField groupPusher;
     private final ComboboxFormField<String> rolePusher;
-    private final StringTextFormField headerName;
+    private final StringTextFormField headerEmail;
     private final StringTextFormField headerUsername;
 
 // --------------------------- CONSTRUCTORS ---------------------------
@@ -106,10 +106,10 @@ public class GitlabCapabilityDescriptor extends CapabilityDescriptorSupport<Gitl
                 FormField.OPTIONAL
         );
 
-        this.headerName = new StringTextFormField(
-                GitlabCapabilityConfiguration.HEADER_NAME,
-                messages.headerNameLabel(),
-                messages.headerNameHelp(),
+        this.headerEmail = new StringTextFormField(
+                GitlabCapabilityConfiguration.HEADER_EMAIL,
+                messages.headerEmailLabel(),
+                messages.headerEmailHelp(),
                 FormField.OPTIONAL
         );
     }
@@ -133,7 +133,7 @@ public class GitlabCapabilityDescriptor extends CapabilityDescriptorSupport<Gitl
     public List<FormField> formFields() {
         return Arrays.asList(this.url, this.token, this.cacheTtl, this.defaultRole,
                 this.groupPusher, this.rolePusher, this.groupAdmin, this.roleAdmin,
-                this.headerUsername, this.headerName);
+                this.headerUsername, this.headerEmail);
     }
 
     @Override
@@ -204,10 +204,10 @@ public class GitlabCapabilityDescriptor extends CapabilityDescriptorSupport<Gitl
         @DefaultMessage("HTTP Header to identify the username")
         String headerUsernameHelp();
 
-        @DefaultMessage("Header Name")
-        String headerNameLabel();
+        @DefaultMessage("Header E-mail")
+        String headerEmailLabel();
 
-        @DefaultMessage("HTTP Header to identify the name")
-        String headerNameHelp();
+        @DefaultMessage("HTTP Header to identify the e-mail")
+        String headerEmailHelp();
     }
 }

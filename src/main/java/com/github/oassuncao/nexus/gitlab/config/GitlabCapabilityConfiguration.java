@@ -19,7 +19,7 @@ public class GitlabCapabilityConfiguration extends CapabilityConfigurationSuppor
     static final String ROLE_ADMIN = "roleAdmin";
     static final String GROUP_PUSHER = "groupPusher";
     static final String ROLE_PUSHER = "rolePusher";
-    static final String HEADER_NAME = "headerName";
+    static final String HEADER_EMAIL = "headerEmail";
     static final String HEADER_USERNAME = "headerUsername";
 
     private String url;
@@ -30,7 +30,7 @@ public class GitlabCapabilityConfiguration extends CapabilityConfigurationSuppor
     private String roleAdmin;
     private String groupPusher;
     private String rolePusher;
-    private String headerName;
+    private String headerEmail;
     private String headerUsername;
 
 // --------------------------- CONSTRUCTORS ---------------------------
@@ -45,7 +45,7 @@ public class GitlabCapabilityConfiguration extends CapabilityConfigurationSuppor
         groupPusher = properties.get(GROUP_PUSHER);
         rolePusher = properties.get(ROLE_PUSHER);
 
-        headerName = properties.get(HEADER_NAME);
+        headerEmail = properties.get(HEADER_EMAIL);
         headerUsername = properties.get(HEADER_USERNAME);
     }
 
@@ -55,36 +55,20 @@ public class GitlabCapabilityConfiguration extends CapabilityConfigurationSuppor
         return cacheTtl;
     }
 
-    public void setCacheTtl(String cacheTtl) {
-        this.cacheTtl = cacheTtl;
-    }
-
     public String getDefaultRole() {
         return defaultRole;
-    }
-
-    public void setDefaultRole(String defaultRole) {
-        this.defaultRole = defaultRole;
     }
 
     public String getGroupAdmin() {
         return groupAdmin;
     }
 
-    public void setGroupAdmin(String groupAdmin) {
-        this.groupAdmin = groupAdmin;
-    }
-
     public String getGroupPusher() {
         return groupPusher;
     }
 
-    public void setGroupPusher(String groupPusher) {
-        this.groupPusher = groupPusher;
-    }
-
-    public String getHeaderName() {
-        return headerName;
+    public String getHeaderEmail() {
+        return headerEmail;
     }
 
     public String getHeaderUsername() {
@@ -95,31 +79,15 @@ public class GitlabCapabilityConfiguration extends CapabilityConfigurationSuppor
         return roleAdmin;
     }
 
-    public void setRoleAdmin(String roleAdmin) {
-        this.roleAdmin = roleAdmin;
-    }
-
     public String getRolePusher() {
         return rolePusher;
-    }
-
-    public void setRolePusher(String rolePusher) {
-        this.rolePusher = rolePusher;
     }
 
     public String getToken() {
         return token;
     }
 
-    public void setToken(String token) {
-        this.token = token;
-    }
-
     public String getUrl() {
         return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
     }
 }

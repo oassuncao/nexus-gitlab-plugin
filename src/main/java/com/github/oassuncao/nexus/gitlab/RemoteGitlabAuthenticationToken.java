@@ -1,5 +1,6 @@
 package com.github.oassuncao.nexus.gitlab;
 
+import org.apache.commons.lang3.StringUtils;
 import org.sonatype.nexus.security.authc.HttpHeaderAuthenticationToken;
 
 /**
@@ -10,20 +11,20 @@ public class RemoteGitlabAuthenticationToken extends HttpHeaderAuthenticationTok
 // ------------------------------ FIELDS ------------------------------
 
     private final String username;
-    private final String name;
+    private final String email;
 
 // --------------------------- CONSTRUCTORS ---------------------------
 
-    public RemoteGitlabAuthenticationToken(String username, String name, String host) {
+    public RemoteGitlabAuthenticationToken(String username, String email, String host) {
         super(username, username, host);
         this.username = username;
-        this.name = name;
+        this.email = email;
     }
 
 // --------------------- GETTER / SETTER METHODS ---------------------
 
-    public String getName() {
-        return name;
+    public String getEmail() {
+        return email;
     }
 
     public String getUsername() {
@@ -36,8 +37,20 @@ public class RemoteGitlabAuthenticationToken extends HttpHeaderAuthenticationTok
     public String toString() {
         return "RemoteGitlabAuthenticationToken{" +
                 "username='" + username + '\'' +
-                ", name='" + name + '\'' +
+                ", email='" + email + '\'' +
                 ", host='" + getHost() + '\'' +
                 '}';
+    }
+
+// ------------------------ INTERFACE METHODS ------------------------
+
+
+// --------------------- Interface AuthenticationToken ---------------------
+
+    @Override
+    public String getPrincipal() {
+        if (StringUtils.isNotEmpty(email))
+            return getEmail();
+        return getUsername();
     }
 }

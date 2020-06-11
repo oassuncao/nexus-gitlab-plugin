@@ -48,20 +48,22 @@ public class GitlabAuthenticatingRealm extends AbstractGitlabAuthenticationRealm
         }
 
         if (!enabled) {
-            LOGGER.info("The Realm is disabled");
+            LOGGER.debug("The Realm is disabled");
             throw new UnsupportedOperationException("The Realm is disabled");
         }
 
         UsernamePasswordToken t = (UsernamePasswordToken) token;
-        LOGGER.info("Authenticating {}", ((UsernamePasswordToken) token).getUsername());
+        LOGGER.debug("Authenticating {}", ((UsernamePasswordToken) token).getUsername());
         GitlabPrincipal authenticatedPrincipal;
         try {
             authenticatedPrincipal = gitlabClient.authenticate(t.getUsername(), t.getPassword());
-            LOGGER.info("Successfully authenticated {} with groups {}", t.getUsername(), authenticatedPrincipal.getGroups());
+            LOGGER.debug("Successfully authenticated {} with groups {}", t.getUsername(), authenticatedPrincipal.getGroups());
             return createSimpleAuthInfo(authenticatedPrincipal, t);
+        } catch (GitlabAuthenticationException e) {
+            LOGGER.debug("Authentication failed", e);
         } catch (Exception e) {
-            LOGGER.warn("Failed authentication", e);
-            return null;
+            LOGGER.error("Error on authenticate", e);
         }
+        return null;
     }
 }

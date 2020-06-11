@@ -55,7 +55,7 @@ public class GitlabCapability extends CapabilitySupport<GitlabCapabilityConfigur
         enable(config, authenticatingRealm);
         enable(config, remoteAuthenticatingRealm);
 
-        authenticationTokenFactory.setHeaderName(config.getHeaderName());
+        authenticationTokenFactory.setHeaderEmail(config.getHeaderEmail());
         authenticationTokenFactory.setHeaderUsername(config.getHeaderUsername());
         super.onActivate(config);
     }
@@ -77,7 +77,7 @@ public class GitlabCapability extends CapabilitySupport<GitlabCapabilityConfigur
         disable(authenticatingRealm);
         disable(remoteAuthenticatingRealm);
 
-        authenticationTokenFactory.setHeaderName(null);
+        authenticationTokenFactory.setHeaderEmail(null);
         authenticationTokenFactory.setHeaderUsername(null);
         super.onPassivate(config);
     }
