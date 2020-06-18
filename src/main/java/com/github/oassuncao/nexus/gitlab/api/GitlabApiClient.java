@@ -57,13 +57,13 @@ public class GitlabApiClient {
             LOGGER.info("Using cached principal for login: {}", login);
             return cached;
         } else {
-            GitlabPrincipal principal = getPrincipal(login, token);
+            GitlabPrincipal principal = getPrincipal(token);
             tokenToPrincipalCache.put(cacheKey, principal);
             return principal;
         }
     }
 
-    private GitlabPrincipal getPrincipal(String loginName, char[] token) throws GitlabAuthenticationException {
+    private GitlabPrincipal getPrincipal(char[] token) throws GitlabAuthenticationException {
         GitlabUser gitlabUser;
         GitlabAPI gitlabAPI;
         try {
@@ -71,11 +71,6 @@ public class GitlabApiClient {
             gitlabUser = gitlabAPI.getUser();
         } catch (Exception e) {
             throw new GitlabAuthenticationException("Error on validating user and token", e);
-        }
-
-        if (gitlabUser == null || !loginName.equals(gitlabUser.getEmail())) {
-            LOGGER.warn("Given username {} not found or does not match Gitlab E-mail!", loginName);
-            throw new GitlabAuthenticationException("Given username not found or does not match Gitlab E-mail!");
         }
 
         GitlabPrincipal principal = new GitlabPrincipal();
