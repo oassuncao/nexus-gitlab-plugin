@@ -27,7 +27,7 @@ public class GitlabAuthenticatingRealm extends AbstractGitlabAuthenticationRealm
 // ------------------------ INTERFACE METHODS ------------------------
 
     public GitlabAuthenticatingRealm() {
-        setName("gitlab");
+        setName(GitlabUserManager.REALM_NAME);
     }
 
 
