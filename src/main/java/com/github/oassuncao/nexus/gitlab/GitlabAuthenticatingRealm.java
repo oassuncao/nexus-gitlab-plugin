@@ -9,6 +9,7 @@ import org.eclipse.sisu.Description;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
@@ -24,9 +25,13 @@ public class GitlabAuthenticatingRealm extends AbstractGitlabAuthenticationRealm
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GitlabAuthenticatingRealm.class);
 
+    private final GitlabUserManager userManager;
+
 // ------------------------ INTERFACE METHODS ------------------------
 
-    public GitlabAuthenticatingRealm() {
+    @Inject
+    public GitlabAuthenticatingRealm(GitlabUserManager userManager) {
+        this.userManager = userManager;
         setName(GitlabUserManager.REALM_NAME);
     }
 
@@ -47,18 +52,17 @@ public class GitlabAuthenticatingRealm extends AbstractGitlabAuthenticationRealm
                     token.getClass().getName(), UsernamePasswordToken.class.getName()));
         }
 
-        if (!enabled) {
+        if (userManager.isDisabled()) {
             LOGGER.debug("The Realm is disabled");
             throw new UnsupportedOperationException("The Realm is disabled");
         }
 
         UsernamePasswordToken t = (UsernamePasswordToken) token;
         LOGGER.debug("Authenticating {}", ((UsernamePasswordToken) token).getUsername());
-        GitlabPrincipal authenticatedPrincipal;
         try {
-            authenticatedPrincipal = gitlabClient.authenticate(t.getUsername(), t.getPassword());
-            LOGGER.debug("Successfully authenticated {} with groups {}", t.getUsername(), authenticatedPrincipal.getGroups());
-            return createSimpleAuthInfo(authenticatedPrincipal, t);
+            GitlabPrincipal principal = userManager.authenticate(t.getUsername(), t.getPassword());
+            LOGGER.debug("Successfully authenticated {} with roles {}", t.getUsername(), principal.getRoles());
+            return createSimpleAuthInfo(principal, t);
         } catch (GitlabAuthenticationException e) {
             LOGGER.debug("Authentication failed", e);
         } catch (Exception e) {

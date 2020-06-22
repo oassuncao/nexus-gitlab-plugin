@@ -18,9 +18,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * @author Silvio Assunção
@@ -34,8 +32,7 @@ public class GitlabApiClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(GitlabApiClient.class);
 
     private GitlabAPI client;
-    private Cache<String, GitlabPrincipal> tokenToPrincipalCache;
-    private Cache<String, List<GitlabUser>> usersCache;
+    private Cache<String, GitlabPrincipal> usersCache;
     private String url;
     private Duration cacheTtl;
 
@@ -50,54 +47,58 @@ public class GitlabApiClient {
     public GitlabPrincipal authenticate(String login, char[] token) throws GitlabAuthenticationException {
         // Combine the login and the token as the cache key since they are both used to generate the principal. If either changes we should obtain a new
         // principal.
-        String cacheKey = login + "|" + new String(token);
-        GitlabPrincipal cached = tokenToPrincipalCache.getIfPresent(cacheKey);
+        GitlabPrincipal cached = usersCache.getIfPresent(login);
         if (cached != null) {
             LOGGER.debug("Using cached principal for login: {}", login);
             return cached;
         } else {
             GitlabPrincipal principal = getPrincipal(token);
-            tokenToPrincipalCache.put(cacheKey, principal);
+            usersCache.put(login, principal);
             return principal;
         }
     }
 
     private GitlabPrincipal getPrincipal(char[] token) throws GitlabAuthenticationException {
-        GitlabUser gitlabUser;
-        GitlabAPI gitlabAPI;
         try {
-            gitlabAPI = GitlabAPI.connect(url, String.valueOf(token));
-            gitlabUser = gitlabAPI.getUser();
+            GitlabAPI gitlabAPI = GitlabAPI.connect(url, String.valueOf(token));
+            return loadPrincipal(gitlabAPI.getUser());
         } catch (Exception e) {
             throw new GitlabAuthenticationException("Error on validating user and token", e);
         }
-
-        GitlabPrincipal principal = new GitlabPrincipal();
-        principal.setEmail(gitlabUser.getEmail());
-        principal.setUsername(gitlabUser.getUsername());
-        principal.setGroups(getGroups(gitlabUser.getUsername()));
-        return principal;
     }
 
-    public Set<String> getGroups(String username) throws GitlabAuthenticationException {
+    private GitlabPrincipal loadPrincipal(GitlabUser user) throws GitlabAuthenticationException {
+        if (user == null)
+            throw new GitlabAuthenticationException("User not found");
+
+        return GitlabPrincipal.mapFrom(user, getGroups(user));
+    }
+
+    public List<GitlabGroup> getGroups(GitlabUser user) throws GitlabAuthenticationException {
         try {
-            List<GitlabGroup> groups = client.getGroupsViaSudo(username, new Pagination().withPerPage(Pagination.MAX_ITEMS_PER_PAGE));
-            return groups.stream().map(this::mapGitlabGroupToNexusRole).collect(Collectors.toSet());
+            return client.getGroupsViaSudo(user.getUsername(), new Pagination().withPerPage(Pagination.MAX_ITEMS_PER_PAGE));
         } catch (Throwable e) {
             throw new GitlabAuthenticationException("Could not fetch groups for given username", e);
         }
     }
 
-    public List<GitlabUser> findUser(String username) throws GitlabAuthenticationException {
+    public GitlabPrincipal findUser(String username) throws GitlabAuthenticationException {
         try {
-            List<GitlabUser> cache = usersCache.getIfPresent(username);
+            GitlabPrincipal cache = usersCache.getIfPresent(username);
             if (cache != null)
                 return cache;
 
             List<GitlabUser> users = client.findUsers(username);
-            if (CollectionUtils.isNotEmpty(users))
-                usersCache.put(username, users);
-            return users;
+            if (CollectionUtils.isEmpty(users))
+                throw new GitlabAuthenticationException("User not found");
+
+            if (users.size() > 1)
+                throw new GitlabAuthenticationException(String.format("The username / e-mail %s contains more than one user", username));
+
+            GitlabUser user = users.get(0);
+            GitlabPrincipal principal = loadPrincipal(user);
+            usersCache.put(username, principal);
+            return principal;
         } catch (IOException e) {
             throw new GitlabAuthenticationException("Could not fetch users for given username", e);
         }
@@ -108,23 +109,12 @@ public class GitlabApiClient {
         this.cacheTtl = cacheTtl;
 
         client = GitlabAPI.connect(url, token);
-        initPrincipalCache();
         initUsersCache();
-    }
-
-    private void initPrincipalCache() {
-        tokenToPrincipalCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(cacheTtl.toMillis(), TimeUnit.MILLISECONDS)
-                .build();
     }
 
     private void initUsersCache() {
         usersCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(cacheTtl.toMillis(), TimeUnit.MILLISECONDS)
                 .build();
-    }
-
-    private String mapGitlabGroupToNexusRole(GitlabGroup team) {
-        return team.getPath();
     }
 }

@@ -1,8 +1,6 @@
 package com.github.oassuncao.nexus.gitlab.config;
 
-import com.github.oassuncao.nexus.gitlab.AbstractGitlabAuthenticationRealm;
-import com.github.oassuncao.nexus.gitlab.GitlabAuthenticatingRealm;
-import com.github.oassuncao.nexus.gitlab.RemoteGitlabAuthenticatingRealm;
+import com.github.oassuncao.nexus.gitlab.GitlabUserManager;
 import com.github.oassuncao.nexus.gitlab.filter.RemoteGitlabAuthenticationTokenFactory;
 import org.sonatype.nexus.capability.CapabilitySupport;
 import org.sonatype.nexus.capability.Condition;
@@ -20,16 +18,14 @@ import java.util.Map;
 public class GitlabCapability extends CapabilitySupport<GitlabCapabilityConfiguration> {
 // ------------------------------ FIELDS ------------------------------
 
-    private final GitlabAuthenticatingRealm authenticatingRealm;
-    private final RemoteGitlabAuthenticatingRealm remoteAuthenticatingRealm;
+    private final GitlabUserManager userManager;
     private final RemoteGitlabAuthenticationTokenFactory authenticationTokenFactory;
 
 // --------------------------- CONSTRUCTORS ---------------------------
 
     @Inject
-    public GitlabCapability(final GitlabAuthenticatingRealm authenticatingRealm, RemoteGitlabAuthenticatingRealm remoteAuthenticatingRealm, RemoteGitlabAuthenticationTokenFactory authenticationTokenFactory) {
-        this.authenticatingRealm = authenticatingRealm;
-        this.remoteAuthenticatingRealm = remoteAuthenticatingRealm;
+    public GitlabCapability(GitlabUserManager userManager, RemoteGitlabAuthenticationTokenFactory authenticationTokenFactory) {
+        this.userManager = userManager;
         this.authenticationTokenFactory = authenticationTokenFactory;
     }
 
@@ -52,37 +48,27 @@ public class GitlabCapability extends CapabilitySupport<GitlabCapabilityConfigur
 
     @Override
     protected void onActivate(GitlabCapabilityConfiguration config) throws Exception {
-        enable(config, authenticatingRealm);
-        enable(config, remoteAuthenticatingRealm);
+        userManager.setCacheTtl(Duration.parse(config.getCacheTtl()));
+        userManager.setToken(config.getToken());
+        userManager.setUrl(config.getUrl());
+        userManager.setDefaultRole(config.getDefaultRole());
+        userManager.setGroupAdmin(config.getGroupAdmin());
+        userManager.setRoleAdmin(config.getRoleAdmin());
+        userManager.setGroupPusher(config.getGroupPusher());
+        userManager.setRolePusher(config.getRolePusher());
+        userManager.enable();
 
         authenticationTokenFactory.setHeaderEmail(config.getHeaderEmail());
         authenticationTokenFactory.setHeaderUsername(config.getHeaderUsername());
         super.onActivate(config);
     }
 
-    private void enable(GitlabCapabilityConfiguration config, AbstractGitlabAuthenticationRealm realm) {
-        realm.setCacheTtl(Duration.parse(config.getCacheTtl()));
-        realm.setToken(config.getToken());
-        realm.setUrl(config.getUrl());
-        realm.setDefaultRole(config.getDefaultRole());
-        realm.setGroupAdmin(config.getGroupAdmin());
-        realm.setRoleAdmin(config.getRoleAdmin());
-        realm.setGroupPusher(config.getGroupPusher());
-        realm.setRolePusher(config.getRolePusher());
-        realm.enable();
-    }
-
     @Override
     protected void onPassivate(GitlabCapabilityConfiguration config) throws Exception {
-        disable(authenticatingRealm);
-        disable(remoteAuthenticatingRealm);
+        userManager.disabled();
 
         authenticationTokenFactory.setHeaderEmail(null);
         authenticationTokenFactory.setHeaderUsername(null);
         super.onPassivate(config);
-    }
-
-    private void disable(AbstractGitlabAuthenticationRealm realm) {
-        realm.disable();
     }
 }

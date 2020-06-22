@@ -1,21 +1,17 @@
 package com.github.oassuncao.nexus.gitlab;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.authc.pam.UnsupportedTokenException;
 import org.eclipse.sisu.Description;
-import org.gitlab.api.models.GitlabUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Silvio Assunção
@@ -28,12 +24,17 @@ public class RemoteGitlabAuthenticatingRealm extends AbstractGitlabAuthenticatio
 // ------------------------------ FIELDS ------------------------------
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RemoteGitlabAuthenticatingRealm.class);
-    private Cache<String, GitlabPrincipal> tokenToPrincipalCache;
+    private final GitlabUserManager userManager;
 
-    public RemoteGitlabAuthenticatingRealm() {
+// --------------------------- CONSTRUCTORS ---------------------------
+
+    @Inject
+    public RemoteGitlabAuthenticatingRealm(GitlabUserManager userManager) {
+        this.userManager = userManager;
         setName("remote-gitlab");
         setCredentialsMatcher((token, info) -> true);
     }
+
 // ------------------------ INTERFACE METHODS ------------------------
 
 
@@ -53,7 +54,7 @@ public class RemoteGitlabAuthenticatingRealm extends AbstractGitlabAuthenticatio
                     token.getClass().getName(), RemoteGitlabAuthenticationToken.class.getName()));
         }
 
-        if (!enabled) {
+        if (userManager.isDisabled()) {
             LOGGER.debug("The Realm is disabled");
             throw new UnsupportedOperationException("The Realm is disabled");
         }
@@ -62,7 +63,7 @@ public class RemoteGitlabAuthenticatingRealm extends AbstractGitlabAuthenticatio
         LOGGER.debug("Authenticating {}", t.getUsername());
         try {
             GitlabPrincipal principal = getPrincipal(t);
-            LOGGER.debug("Successfully authenticated {} with groups {}", t.getUsername(), principal.getGroups());
+            LOGGER.debug("Successfully authenticated {} with roles {}", t.getUsername(), principal.getRoles());
             return createSimpleAuthInfo(principal, token);
         } catch (GitlabAuthenticationException e) {
             LOGGER.debug("Authentication failed", e);
@@ -73,43 +74,7 @@ public class RemoteGitlabAuthenticatingRealm extends AbstractGitlabAuthenticatio
     }
 
     private GitlabPrincipal getPrincipal(RemoteGitlabAuthenticationToken token) throws GitlabAuthenticationException {
-        GitlabPrincipal cached = tokenToPrincipalCache.getIfPresent(token.getPrincipal());
-        if (cached != null) {
-            LOGGER.debug("Using cached principal for login: {}", token.getPrincipal());
-            return cached;
-        }
-
-        String gitlabUsername = getGitlabUsernameByEmail(token);
-
-        GitlabPrincipal principal = new GitlabPrincipal();
-        principal.setEmail(token.getEmail());
-        principal.setUsername(token.getUsername());
-        principal.setGroups(gitlabClient.getGroups(gitlabUsername));
-        tokenToPrincipalCache.put(token.getUsername(), principal);
-        return principal;
-    }
-
-    private String getGitlabUsernameByEmail(RemoteGitlabAuthenticationToken token) throws GitlabAuthenticationException {
-        if (StringUtils.isNotEmpty(token.getUsername()))
-            return token.getUsername();
-
-        List<GitlabUser> users = gitlabClient.findUser(token.getEmail());
-        for (GitlabUser user : users) {
-            if (StringUtils.equals(token.getEmail(), user.getEmail()))
-                return user.getUsername();
-        }
-        throw new GitlabAuthenticationException(String.format("User with e-mail %s not found", token.getEmail()));
-    }
-
-    @Override
-    public void enable() {
-        super.enable();
-        initPrincipalCache();
-    }
-
-    private void initPrincipalCache() {
-        tokenToPrincipalCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(cacheTtl.toMillis(), TimeUnit.MILLISECONDS)
-                .build();
+        String username = StringUtils.isNoneEmpty(token.getUsername()) ? token.getUsername() : token.getEmail();
+        return userManager.findUser(username);
     }
 }
