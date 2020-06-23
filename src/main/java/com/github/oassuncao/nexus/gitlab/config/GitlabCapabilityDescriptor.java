@@ -36,6 +36,7 @@ public class GitlabCapabilityDescriptor extends CapabilityDescriptorSupport<Gitl
     private final ComboboxFormField<String> rolePusher;
     private final StringTextFormField headerEmail;
     private final StringTextFormField headerUsername;
+    private final CheckboxFormField invalidateCache;
 
 // --------------------------- CONSTRUCTORS ---------------------------
 
@@ -62,6 +63,13 @@ public class GitlabCapabilityDescriptor extends CapabilityDescriptorSupport<Gitl
                 messages.cacheTtlLabel(),
                 messages.cacheTtlHelp(),
                 FormField.MANDATORY
+        );
+
+        this.invalidateCache = new CheckboxFormField(
+                GitlabCapabilityConfiguration.INVALIDATE_CACHE,
+                messages.invalidateCacheLabel(),
+                messages.invalidateCacheHelp(),
+                FormField.OPTIONAL
         );
 
         this.defaultRole = new ComboboxFormField<String>(
@@ -131,7 +139,7 @@ public class GitlabCapabilityDescriptor extends CapabilityDescriptorSupport<Gitl
 
     @Override
     public List<FormField> formFields() {
-        return Arrays.asList(this.url, this.token, this.cacheTtl, this.defaultRole,
+        return Arrays.asList(this.url, this.token, this.cacheTtl, this.invalidateCache, this.defaultRole,
                 this.groupPusher, this.rolePusher, this.groupAdmin, this.roleAdmin,
                 this.headerUsername, this.headerEmail);
     }
@@ -167,6 +175,12 @@ public class GitlabCapabilityDescriptor extends CapabilityDescriptorSupport<Gitl
 
         @DefaultMessage("Duration cache of the authentication (Ex: PT1M)")
         String cacheTtlHelp();
+
+        @DefaultMessage("Invalidate Cache")
+        String invalidateCacheLabel();
+
+        @DefaultMessage("Invalidate the cache from Gitlab")
+        String invalidateCacheHelp();
 
         @DefaultMessage("Default Role")
         String defaultRoleLabel();

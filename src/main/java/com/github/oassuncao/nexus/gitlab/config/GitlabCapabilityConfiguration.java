@@ -14,6 +14,7 @@ public class GitlabCapabilityConfiguration extends CapabilityConfigurationSuppor
     static final String URL = "url";
     static final String TOKEN = "token";
     static final String CACHE_TTL = "cacheTtl";
+    static final String INVALIDATE_CACHE = "invalidateCache";
     static final String DEFAULT_ROLE = "defaultRole";
     static final String GROUP_ADMIN = "groupAdmin";
     static final String ROLE_ADMIN = "roleAdmin";
