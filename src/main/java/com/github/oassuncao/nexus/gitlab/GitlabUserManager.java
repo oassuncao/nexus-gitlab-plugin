@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.sonatype.nexus.security.role.RoleIdentifier;
 import org.sonatype.nexus.security.user.*;
 
-import javax.annotation.Priority;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -24,7 +23,6 @@ import java.util.stream.Collectors;
 @Singleton
 @Named
 @Description("Gitlab")
-@Priority(Integer.MAX_VALUE)
 public class GitlabUserManager extends AbstractUserManager implements RoleMappingUserManager {
 // ------------------------------ FIELDS ------------------------------
 
@@ -111,17 +109,16 @@ public class GitlabUserManager extends AbstractUserManager implements RoleMappin
     @Override
     public Set<RoleIdentifier> getUsersRoles(String userId, String userSource) throws UserNotFoundException {
         LOGGER.trace("Getting Users Roles of {} {}", userId, userSource);
-        final Set<RoleIdentifier> roles = new HashSet<>();
-        if (REALM_NAME.equals(userSource)) {
-            try {
-                GitlabPrincipal principal = client.findUser(userId);
-                LOGGER.debug("Got principal {} with roles {} ", principal.getUsername(), principal.getRoles());
-                return getRolesIdentifier(principal);
-            } catch (GitlabAuthenticationException e) {
-                throw new UserNotFoundException(userId, "Error on findUser", e);
-            }
+        if (!REALM_NAME.equals(userSource))
+            throw new UserNotFoundException(userId, "This usersource is not supported", null);
+
+        try {
+            GitlabPrincipal principal = client.findUser(userId);
+            LOGGER.debug("Got principal {} with roles {} ", principal.getUsername(), principal.getRoles());
+            return getRolesIdentifier(principal);
+        } catch (GitlabAuthenticationException e) {
+            throw new UserNotFoundException(userId, "Error on findUser", e);
         }
-        return roles;
     }
 
     @Override

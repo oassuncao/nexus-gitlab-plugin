@@ -46,14 +46,12 @@ public abstract class AbstractGitlabAuthenticationRealm extends AuthorizingRealm
         try {
             Object principal = principals.getPrimaryPrincipal();
             LOGGER.trace("Getting authorization info {} with type {}", principal, principal.getClass().getCanonicalName());
-            if (principal instanceof GitlabPrincipal) {
-                GitlabPrincipal gitlabPrincipal = (GitlabPrincipal) principal;
-                LOGGER.debug("User {} received authorizations {}", gitlabPrincipal.getUsername(), gitlabPrincipal.getRoles());
-                return new SimpleAuthorizationInfo(gitlabPrincipal.getRoles());
-            } else {
-                LOGGER.warn("Principal is not a GitlabPrincipal {} with value {}", principal.getClass().getCanonicalName(), principal.toString());
+            if (!(principal instanceof GitlabPrincipal))
                 return null;
-            }
+
+            GitlabPrincipal gitlabPrincipal = (GitlabPrincipal) principal;
+            LOGGER.debug("User {} received authorizations {}", gitlabPrincipal.getUsername(), gitlabPrincipal.getRoles());
+            return new SimpleAuthorizationInfo(gitlabPrincipal.getRoles());
         } catch (Throwable ex) {
             LOGGER.error("Error on doGetAuthorizationInfo", ex);
             throw ex;
