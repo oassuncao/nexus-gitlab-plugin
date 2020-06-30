@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.sonatype.nexus.security.role.RoleIdentifier;
 import org.sonatype.nexus.security.user.*;
 
+import javax.annotation.Priority;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -23,12 +24,14 @@ import java.util.stream.Collectors;
 @Singleton
 @Named
 @Description("Gitlab")
+@Priority(Integer.MAX_VALUE)
 public class GitlabUserManager extends AbstractUserManager implements RoleMappingUserManager {
 // ------------------------------ FIELDS ------------------------------
 
     public final static String REALM_NAME = "gitlab";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GitlabUserManager.class);
+    private final RoleMappingUserManager defaultRoleMappingUserManager;
     private GitlabApiClient client;
     private boolean enabled;
     private String url;
@@ -63,7 +66,8 @@ public class GitlabUserManager extends AbstractUserManager implements RoleMappin
 // --------------------------- CONSTRUCTORS ---------------------------
 
     @Inject
-    public GitlabUserManager(GitlabApiClient client) {
+    public GitlabUserManager(@Named("default") RoleMappingUserManager defaultRoleMappingUserManager, GitlabApiClient client) {
+        this.defaultRoleMappingUserManager = defaultRoleMappingUserManager;
         this.client = client;
     }
 
@@ -110,7 +114,7 @@ public class GitlabUserManager extends AbstractUserManager implements RoleMappin
     public Set<RoleIdentifier> getUsersRoles(String userId, String userSource) throws UserNotFoundException {
         LOGGER.trace("Getting Users Roles of {} {}", userId, userSource);
         if (!REALM_NAME.equals(userSource))
-            throw new UserNotFoundException(userId, "This usersource is not supported", null);
+            return defaultRoleMappingUserManager.getUsersRoles(userId, userSource);
 
         try {
             GitlabPrincipal principal = client.findUser(userId);
