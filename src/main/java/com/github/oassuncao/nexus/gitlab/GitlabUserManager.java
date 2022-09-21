@@ -211,10 +211,12 @@ public class GitlabUserManager extends AbstractUserManager implements RoleMappin
     private Set<String> getRoles(GitlabPrincipal principal) {
         Set<String> roles = new HashSet<>();
         roles.add(defaultRole);
-        if (principal.getGroups().stream().anyMatch(d -> groupAdmin.equals(d)))
-            roles.add(roleAdmin);
-        if (principal.getGroups().stream().anyMatch(d -> groupPusher.equals(d)))
-            roles.add(rolePusher);
+        if (principal.getGroups() != null) {
+            if (principal.getGroups().stream().anyMatch(d -> groupAdmin.equals(d)))
+                roles.add(roleAdmin);
+            if (principal.getGroups().stream().anyMatch(d -> groupPusher.equals(d)))
+                roles.add(rolePusher);
+        }
         return roles;
     }
 
