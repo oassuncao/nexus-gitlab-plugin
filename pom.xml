@@ -6,7 +6,7 @@
 
     <groupId>com.github.oassuncao</groupId>
     <artifactId>nexus-gitlab-plugin</artifactId>
-    <version>1.6.3</version>
+    <version>1.6.4</version>
 
     <parent>
         <groupId>org.sonatype.nexus.plugins</groupId>
